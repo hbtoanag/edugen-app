@@ -17,7 +17,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      setError('Email hoặc mật khẩu không đúng, hoặc tài khoản chưa được cấp.');
+      setError('LỖI THẬT (để chẩn đoán): ' + error.message);
       return;
     }
     router.replace('/');
