@@ -1,4 +1,12 @@
-# Hướng dẫn triển khai EduGen (Giai đoạn 1)
+# Hướng dẫn triển khai EduGen
+
+## Nếu bạn ĐÃ deploy được ở bản trước (chỉ cập nhật code mới)
+1. Vào Supabase → SQL Editor → dán nội dung file `supabase/patch-2-subjects-documents.sql` → Run (thêm bảng Môn học + trường quản lý tài liệu, không mất dữ liệu cũ).
+2. Lên GitHub, upload đè các file/thư mục mới vào đúng vị trí cũ trong repo (kéo-thả như trước, chọn "Replace" nếu được hỏi).
+3. Vercel sẽ tự động build lại — không cần đổi Environment Variables (tên biến vẫn giữ nguyên: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY).
+4. Xong, vào lại web kiểm tra tính năng mới.
+
+---
 
 Làm đúng theo thứ tự dưới đây. Mỗi bước chỉ là bấm chuột, không cần gõ code.
 

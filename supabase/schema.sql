@@ -48,15 +48,30 @@ create table knowledge_tags (
   topic text not null           -- "Tiệm cận", "Cực trị hàm hợp"...
 );
 
+-- ---------- MÔN HỌC (Admin quản lý, ai đăng nhập cũng đọc được để chọn) ----------
+create table subjects (
+  id uuid primary key default gen_random_uuid(),
+  name text unique not null,
+  created_at timestamptz default now()
+);
+insert into subjects (name) values
+  ('Toán'),('Ngữ văn'),('Tiếng Anh'),('Vật lý'),('Hóa học'),('Sinh học'),
+  ('Lịch sử'),('Địa lý'),('Giáo dục Kinh tế và Pháp luật'),('Tin học'),
+  ('Công nghệ'),('Giáo dục thể chất'),('Giáo dục Quốc phòng và An ninh'),
+  ('Hoạt động trải nghiệm, hướng nghiệp');
+
 -- ---------- TÀI LIỆU (chỉ GV sở hữu, Admin không đụng) ----------
 create table documents (
   id uuid primary key default gen_random_uuid(),
   teacher_id uuid references profiles(id) on delete cascade,
   subject text not null,
   title text not null,
-  file_path text not null,      -- đường dẫn trong Supabase Storage
+  doc_type text not null default 'khac', -- de_thi_tham_khao | de_kiem_tra | tai_lieu_tong_hop | chuyen_de | khac
+  chapter text,                     -- chương/chủ đề chính của tài liệu (tự khai khi tải lên)
+  file_path text not null,          -- đường dẫn trong Supabase Storage
   status text default 'processing', -- processing | done | error
-  ai_summary jsonb,             -- tóm tắt kiến thức AI sinh ra
+  ai_summary jsonb,                 -- tóm tắt kiến thức AI sinh ra
+  clean_reading_content text,       -- nội dung đã được AI làm sạch (bỏ header/nguồn) để hiển thị dạng đọc
   created_at timestamptz default now()
 );
 
@@ -176,6 +191,10 @@ create policy "teacher read own class roster" on class_students for select using
   exists (select 1 from class_teachers ct where ct.class_id = class_students.class_id and ct.teacher_id = auth.uid())
 );
 create policy "student read own row" on class_students for select using (student_id = auth.uid());
+
+alter table subjects enable row level security;
+create policy "everyone read subjects" on subjects for select using (auth.uid() is not null);
+create policy "admin manage subjects" on subjects for all using (get_my_role() = 'admin');
 
 alter table documents enable row level security;
 create policy "teacher own documents" on documents for all using (teacher_id = auth.uid()) with check (teacher_id = auth.uid());

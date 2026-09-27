@@ -1,21 +1,70 @@
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  font-family: Inter, -apple-system, Segoe UI, Roboto, sans-serif;
-  background: #F3F1EC;
-  color: #20242B;
+:root{
+  --navy:#16233F; --navy-2:#1B2A4A; --gold:#B8860B; --gold-light:#D9A441;
+  --paper:#FBFAF7; --bg:#F4F2EC; --ink:#1D2430; --muted:#6B7280;
+  --line:#E4E1D8; --card:#FFFFFF; --teal:#2A6F5E; --rust:#B8452C;
+  --radius:10px;
 }
-.container { max-width: 720px; margin: 0 auto; padding: 32px 20px; }
-input, select {
-  width: 100%; padding: 9px 12px; border: 1px solid #E4E1D8; border-radius: 8px;
-  margin-bottom: 12px; font-size: 14px;
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:'Inter',-apple-system,Segoe UI,Roboto,sans-serif;
 }
-button {
-  border: none; background: #1B2A4A; color: #fff; padding: 9px 16px;
-  border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;
+h1,h2,h3{font-family:'Source Serif 4',Georgia,serif; margin:0 0 4px; color:var(--navy);}
+.container{max-width:880px;margin:0 auto;padding:28px 20px 60px;}
+.container.narrow{max-width:400px;}
+
+/* Thanh điều hướng trên cùng dùng chung mọi trang */
+.appbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 24px;background:var(--navy);color:#fff;flex-wrap:wrap;gap:10px;
 }
-button.ghost { background: transparent; color: #1B2A4A; border: 1px solid #E4E1D8; }
-.card { background: #fff; border: 1px solid #E4E1D8; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
-.error { color: #B8452C; font-size: 13px; margin-bottom: 10px; }
-.muted { color: #6B7280; font-size: 13px; }
-label { display: block; font-size: 13px; margin-bottom: 4px; color: #444; }
+.appbar .brand{display:flex;align-items:center;gap:10px;font-family:'Source Serif 4',serif;font-weight:600;font-size:19px;}
+.appbar .brand-mark{width:30px;height:30px;border-radius:7px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--navy);}
+.appbar .user-block{display:flex;align-items:center;gap:12px;font-size:13.5px;}
+.appbar .user-name{opacity:.95;}
+.appbar .role-badge{background:rgba(255,255,255,.15);padding:3px 10px;border-radius:999px;font-size:11.5px;}
+.appbar button.logout{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);padding:6px 14px;border-radius:8px;font-size:13px;cursor:pointer;}
+.appbar button.logout:hover{background:rgba(255,255,255,.22);}
+
+/* Form & thành phần dùng chung */
+input,select,textarea{
+  width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;
+  margin-bottom:12px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink);
+}
+textarea{resize:vertical;}
+button{
+  border:none;background:var(--navy);color:#fff;padding:9px 16px;
+  border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;
+}
+button:hover{background:var(--navy-2);}
+button.ghost{background:transparent;color:var(--navy);border:1px solid var(--line);}
+button.ghost:hover{background:var(--bg);}
+button.gold{background:var(--gold);color:#2b1d00;}
+button.gold:hover{background:var(--gold-light);}
+button:disabled{opacity:.6;cursor:not-allowed;}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:16px;}
+.card h3{margin-bottom:12px;font-size:16.5px;}
+.row-list{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+.tag{font-size:11.5px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;}
+.tag.gold{color:#7a5a00;border-color:var(--gold);background:#FBF3DF;}
+.tag.teal{color:var(--teal);border-color:var(--teal);background:#EAF4F1;}
+.tag.rust{color:var(--rust);border-color:var(--rust);background:#FBEEEA;}
+.error{color:var(--rust);font-size:13px;margin-bottom:10px;}
+.success{color:var(--teal);font-size:13px;margin-bottom:10px;}
+.muted{color:var(--muted);font-size:13px;}
+label{display:block;font-size:12.5px;margin-bottom:4px;color:#444;font-weight:600;}
+.tabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;}
+.tab-btn{padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:13px;cursor:pointer;color:var(--navy);}
+.tab-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:600px){.grid-2{grid-template-columns:1fr;}}
+
+/* Khung đọc tài liệu kiểu trang A4 */
+.reader-page{
+  background:var(--paper);color:#222;max-width:700px;margin:0 auto;
+  padding:48px 44px;border-radius:3px;box-shadow:0 10px 30px rgba(0,0,0,.08);
+  font-family:'Source Serif 4',Georgia,serif;line-height:1.7;
+}
+.reader-page h2{text-align:center;font-size:19px;}

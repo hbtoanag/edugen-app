@@ -17,16 +17,19 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      setError('LỖI THẬT (để chẩn đoán): ' + error.message);
+      setError('Email hoặc mật khẩu không đúng, hoặc tài khoản chưa được cấp.');
       return;
     }
     router.replace('/');
   }
 
   return (
-    <div className="container" style={{ maxWidth: 380, paddingTop: 80 }}>
-      <h2>Đăng nhập EduGen</h2>
-      <p className="muted">Tài khoản do quản trị trường cấp qua email.</p>
+    <div className="container narrow" style={{ paddingTop: 90 }}>
+      <div style={{ textAlign: 'center', marginBottom: 24 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--gold)', color: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, margin: '0 auto 10px' }}>Eg</div>
+        <h2 style={{ marginBottom: 2 }}>Đăng nhập EduGen</h2>
+        <p className="muted">Tài khoản do quản trị trường cấp qua email.</p>
+      </div>
       <form onSubmit={handleLogin}>
         <label>Email</label>
         <input type="email" value={email} onChange={e => setEmail(e.target.value)} required />

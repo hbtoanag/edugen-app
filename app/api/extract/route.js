@@ -3,21 +3,26 @@ import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 
 const EXTRACT_PROMPT = `
-Bạn là chuyên gia ra đề Toán/khoa học THPT Việt Nam. Đọc kỹ toàn bộ tài liệu PDF đính kèm và trích ra TẤT CẢ câu hỏi có trong đó.
-Với mỗi câu hỏi, xác định:
-- "type": một trong "trac_nghiem" (4 đáp án A/B/C/D), "dung_sai" (có các ý a,b,c,d mỗi ý đúng/sai riêng), "tra_loi_ngan" (điền đáp số)
-- "level": một trong "nhan_biet","thong_hieu","van_dung","van_dung_cao"
+Bạn là chuyên gia ra đề THPT Việt Nam, đồng thời là biên tập viên tài liệu học thuật. Đọc kỹ toàn bộ tài liệu PDF đính kèm.
+
+NHIỆM VỤ 1 — Trích câu hỏi: liệt kê TẤT CẢ câu hỏi có trong tài liệu, mỗi câu xác định:
+- "type": "trac_nghiem" (4 đáp án A/B/C/D) | "dung_sai" (có các ý a,b,c,d mỗi ý đúng/sai riêng) | "tra_loi_ngan" (điền đáp số)
+- "level": "nhan_biet" | "thong_hieu" | "van_dung" | "van_dung_cao"
 - "chapter": tên chương (ví dụ "Ứng dụng đạo hàm")
 - "topic": chủ đề con cụ thể (ví dụ "Tiệm cận", "Cực trị hàm hợp")
-- "content_tex": đề bài, công thức Toán viết trong dấu $...$ (LaTeX)
+- "content_tex": đề bài, công thức viết trong dấu $...$ (LaTeX)
 - "options": nếu trac_nghiem, object {"A":"...","B":"...","C":"...","D":"..."}
 - "sub_statements": nếu dung_sai, mảng [{"label":"a","text":"...","answer":true|false}, ...]
 - "short_answer": nếu tra_loi_ngan, đáp số đúng dạng chuỗi
-- "correct_answer": nếu trac_nghiem, chữ cái đúng "A"/"B"/"C"/"D"
-- "solution_tex": lời giải ngắn gọn nếu tài liệu có, nếu không thì tự giải
-- "ability_group": tự đánh giá "A" (giỏi), "B" (khá), hoặc "C" (trung bình/yếu) dựa trên độ khó câu hỏi
+- "correct_answer": nếu trac_nghiem, chữ cái đúng
+- "solution_tex": lời giải ngắn gọn (tự giải nếu tài liệu không có)
+- "ability_group": "A" (giỏi) | "B" (khá) | "C" (trung bình/yếu) theo độ khó
 
-CHỈ trả về một mảng JSON hợp lệ, không thêm chữ giải thích, không thêm markdown code fence.
+NHIỆM VỤ 2 — Bản đọc sạch (clean_reading_content): viết lại TOÀN BỘ nội dung chuyên môn của tài liệu (câu hỏi, lời giải, lý thuyết nếu có) dưới dạng text sạch, dùng $...$ cho công thức Toán. TUYỆT ĐỐI loại bỏ: header/footer lặp lại mỗi trang, dòng "Nguồn:", "Tham khảo:", tên trường/tác giả không liên quan nội dung, số trang, watermark, logo. Trình bày mạch lạc, đánh số câu rõ ràng, sẵn sàng để học sinh đọc ôn tập trực tiếp.
+
+CHỈ trả về một object JSON hợp lệ, đúng cấu trúc:
+{"questions": [ ... như trên ... ], "clean_reading_content": "..."}
+Không thêm chữ giải thích, không thêm markdown code fence.
 `;
 
 export async function POST(req) {
@@ -25,8 +30,8 @@ export async function POST(req) {
   const accessToken = authHeader.replace('Bearer ', '');
 
   const supabaseAsCaller = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY,
     { global: { headers: { Authorization: `Bearer ${accessToken}` } } }
   );
   const { data: { user } } = await supabaseAsCaller.auth.getUser();
@@ -74,9 +79,11 @@ export async function POST(req) {
     if (!geminiRes.ok) {
       throw new Error(geminiJson.error?.message || 'Lỗi gọi Gemini API');
     }
-    const rawText = geminiJson.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+    const rawText = geminiJson.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
     const cleaned = rawText.replace(/```json|```/g, '').trim();
-    const items = JSON.parse(cleaned);
+    const parsed = JSON.parse(cleaned);
+    const items = parsed.questions || [];
+    const cleanReadingContent = parsed.clean_reading_content || null;
 
     let inserted = 0;
     for (const item of items) {
@@ -117,7 +124,9 @@ export async function POST(req) {
       if (!qError) inserted++;
     }
 
-    await supabaseAdmin.from('documents').update({ status: 'done' }).eq('id', doc.id);
+    await supabaseAdmin.from('documents')
+      .update({ status: 'done', clean_reading_content: cleanReadingContent })
+      .eq('id', doc.id);
     return NextResponse.json({ success: true, inserted });
   } catch (err) {
     await supabaseAdmin.from('documents').update({ status: 'error' }).eq('id', doc.id);

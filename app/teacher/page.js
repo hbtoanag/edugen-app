@@ -1,7 +1,17 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { supabase } from '../../lib/supabaseClient';
+import AppShell from '../../components/AppShell';
 import QuestionKatex from '../../components/QuestionKatex';
+
+const DOC_TYPES = [
+  ['de_thi_tham_khao', 'Đề thi tham khảo'],
+  ['de_kiem_tra', 'Đề kiểm tra'],
+  ['tai_lieu_tong_hop', 'Tài liệu tổng hợp / ôn tập'],
+  ['chuyen_de', 'Chuyên đề'],
+  ['khac', 'Khác'],
+];
 
 export default function TeacherPage() {
   const [profile, setProfile] = useState(null);
@@ -9,8 +19,12 @@ export default function TeacherPage() {
   const [questions, setQuestions] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState(null);
+
   const [title, setTitle] = useState('');
+  const [docType, setDocType] = useState('tai_lieu_tong_hop');
+  const [chapter, setChapter] = useState('');
   const [file, setFile] = useState(null);
+  const [filterType, setFilterType] = useState('all');
 
   useEffect(() => { load(); }, []);
 
@@ -21,7 +35,7 @@ export default function TeacherPage() {
     setProfile(prof);
     const { data: docs } = await supabase.from('documents').select('*').order('created_at', { ascending: false });
     setDocuments(docs || []);
-    const { data: qs } = await supabase.from('questions').select('*').order('created_at', { ascending: false }).limit(20);
+    const { data: qs } = await supabase.from('questions').select('*').order('created_at', { ascending: false }).limit(10);
     setQuestions(qs || []);
   }
 
@@ -43,6 +57,8 @@ export default function TeacherPage() {
       teacher_id: profile.id,
       subject: profile.subject,
       title,
+      doc_type: docType,
+      chapter: chapter || null,
       file_path: filePath,
       status: 'processing',
     }).select('*').single();
@@ -55,7 +71,7 @@ export default function TeacherPage() {
 
     setMessage({ type: 'success', text: 'Đã tải lên, AI đang đọc và trích câu hỏi…' });
     setDocuments(prev => [docRow, ...prev]);
-    setTitle(''); setFile(null);
+    setTitle(''); setChapter(''); setFile(null);
 
     const { data: { session } } = await supabase.auth.getSession();
     const res = await fetch('/api/extract', {
@@ -73,49 +89,84 @@ export default function TeacherPage() {
     load();
   }
 
+  const filteredDocs = filterType === 'all' ? documents : documents.filter(d => d.doc_type === filterType);
+  const docTypeLabel = (v) => (DOC_TYPES.find(([k]) => k === v) || [])[1] || v;
+
   return (
-    <div className="container">
-      <h2>Tài liệu & AI trích xuất — {profile?.subject}</h2>
+    <AppShell profile={profile}>
+      <div className="container">
+        <h2>Tài liệu & AI trích xuất — {profile?.subject}</h2>
+        <div className="tabs">
+          <Link href="/teacher/dethi"><span className="tab-btn">Tạo đề thi theo ma trận (AI)</span></Link>
+        </div>
 
-      <div className="card">
-        <h3>Tải tài liệu PDF mới</h3>
-        <form onSubmit={handleUpload}>
-          <label>Tên tài liệu</label>
-          <input value={title} onChange={e => setTitle(e.target.value)} required />
-          <label>Chọn file PDF</label>
-          <input type="file" accept="application/pdf" onChange={e => setFile(e.target.files[0])} required />
-          {message && <div className={message.type === 'error' ? 'error' : 'muted'}>{message.text}</div>}
-          <button type="submit" disabled={uploading}>{uploading ? 'Đang xử lý…' : 'Tải lên & để AI trích xuất'}</button>
-        </form>
-      </div>
-
-      <div className="card">
-        <h3>Tài liệu đã tải</h3>
-        {documents.map(d => (
-          <div key={d.id} className="muted" style={{ marginBottom: 6 }}>
-            • {d.title} — {d.status === 'done' ? 'Đã trích xuất' : d.status === 'error' ? 'Lỗi' : 'Đang xử lý…'}
-          </div>
-        ))}
-        {documents.length === 0 && <div className="muted">Chưa có tài liệu nào.</div>}
-      </div>
-
-      <div className="card">
-        <h3>Câu hỏi mới trích được (20 câu gần nhất)</h3>
-        {questions.map(q => (
-          <div key={q.id} className="card" style={{ background: '#FAFAF8' }}>
-            <QuestionKatex text={q.content_tex} />
-            {q.options && (
-              <div className="muted" style={{ marginTop: 6 }}>
-                {Object.entries(q.options).map(([k, v]) => (
-                  <div key={k}>{k}. <QuestionKatex text={v} /></div>
-                ))}
+        <div className="card">
+          <h3>Tải tài liệu PDF mới</h3>
+          <form onSubmit={handleUpload}>
+            <div className="grid-2">
+              <div>
+                <label>Tên tài liệu</label>
+                <input value={title} onChange={e => setTitle(e.target.value)} required />
               </div>
-            )}
-            <div className="muted" style={{ marginTop: 6 }}>Mức độ: {q.level} · Nhóm: {q.ability_group || '—'}</div>
+              <div>
+                <label>Loại tài liệu</label>
+                <select value={docType} onChange={e => setDocType(e.target.value)}>
+                  {DOC_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </div>
+            </div>
+            <label>Chương / chủ đề chính (tùy chọn)</label>
+            <input value={chapter} onChange={e => setChapter(e.target.value)} placeholder="Ví dụ: Ứng dụng đạo hàm" />
+            <label>Chọn file PDF</label>
+            <input type="file" accept="application/pdf" onChange={e => setFile(e.target.files[0])} required />
+            {message && <div className={message.type === 'error' ? 'error' : 'success'}>{message.text}</div>}
+            <button type="submit" disabled={uploading}>{uploading ? 'Đang xử lý…' : 'Tải lên & để AI trích xuất'}</button>
+          </form>
+        </div>
+
+        <div className="card">
+          <h3>Tài liệu đã tải ({filteredDocs.length})</h3>
+          <div className="tabs">
+            <span className={`tab-btn ${filterType === 'all' ? 'active' : ''}`} onClick={() => setFilterType('all')}>Tất cả</span>
+            {DOC_TYPES.map(([v, l]) => (
+              <span key={v} className={`tab-btn ${filterType === v ? 'active' : ''}`} onClick={() => setFilterType(v)}>{l}</span>
+            ))}
           </div>
-        ))}
-        {questions.length === 0 && <div className="muted">Chưa có câu hỏi nào.</div>}
+          {filteredDocs.map(d => (
+            <div key={d.id} className="row-list">
+              <div>
+                <div style={{ fontWeight: 600 }}>{d.title}</div>
+                <div className="muted">{docTypeLabel(d.doc_type)}{d.chapter ? ` · ${d.chapter}` : ''}</div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span className={`tag ${d.status === 'done' ? 'teal' : d.status === 'error' ? 'rust' : ''}`}>
+                  {d.status === 'done' ? 'Đã trích xuất' : d.status === 'error' ? 'Lỗi' : 'Đang xử lý…'}
+                </span>
+                {d.status === 'done' && <Link href={`/teacher/doc/${d.id}`}><button className="ghost">Xem dạng đọc</button></Link>}
+              </div>
+            </div>
+          ))}
+          {filteredDocs.length === 0 && <div className="muted">Chưa có tài liệu nào.</div>}
+        </div>
+
+        <div className="card">
+          <h3>Câu hỏi mới trích được (10 câu gần nhất)</h3>
+          {questions.map(q => (
+            <div key={q.id} className="row-list" style={{ display: 'block' }}>
+              <QuestionKatex text={q.content_tex} />
+              {q.options && (
+                <div className="muted" style={{ marginTop: 6 }}>
+                  {Object.entries(q.options).map(([k, v]) => (
+                    <div key={k}>{k}. <QuestionKatex text={v} /></div>
+                  ))}
+                </div>
+              )}
+              <div className="muted" style={{ marginTop: 6 }}>Mức độ: {q.level} · Nhóm: {q.ability_group || '—'}</div>
+            </div>
+          ))}
+          {questions.length === 0 && <div className="muted">Chưa có câu hỏi nào.</div>}
+        </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

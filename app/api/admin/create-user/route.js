@@ -5,8 +5,8 @@ import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 // Xác thực người gọi API này thực sự là Admin, dựa trên token đăng nhập họ gửi lên.
 async function verifyIsAdmin(accessToken) {
   const supabaseAsCaller = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY,
     { global: { headers: { Authorization: `Bearer ${accessToken}` } } }
   );
   const { data: { user } } = await supabaseAsCaller.auth.getUser();
