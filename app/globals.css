@@ -61,6 +61,30 @@ label{display:block;font-size:12.5px;margin-bottom:4px;color:#444;font-weight:60
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 @media(max-width:600px){.grid-2{grid-template-columns:1fr;}}
 
+/* Bố cục sidebar */
+.shell{display:flex;align-items:flex-start;}
+.sidebar-nav{width:230px;flex-shrink:0;background:var(--card);border-right:1px solid var(--line);padding:16px 10px;min-height:calc(100vh - 60px);}
+@media(max-width:760px){.shell{flex-direction:column;}.sidebar-nav{width:100%;min-height:auto;display:flex;overflow-x:auto;gap:4px;border-right:none;border-bottom:1px solid var(--line);}}
+.sidebar-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13.5px;margin-bottom:2px;color:var(--ink);white-space:nowrap;}
+.sidebar-item:hover{background:var(--bg);}
+.sidebar-item.active{background:var(--navy);color:#fff;}
+.sidebar-item .badge{background:rgba(0,0,0,.08);padding:1px 8px;border-radius:999px;font-size:11px;}
+.sidebar-item.active .badge{background:rgba(255,255,255,.22);}
+.content-area{flex:1;min-width:0;padding:26px 28px;}
+@media(max-width:600px){.content-area{padding:18px 14px;}}
+
+/* Thẻ số liệu tổng quan */
+.stat-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;text-align:center;}
+.stat-card .num{font-size:26px;font-weight:700;color:var(--navy);font-family:'Source Serif 4',serif;}
+.stat-card .lbl{color:var(--muted);font-size:12.5px;margin-top:2px;}
+
+/* Thanh biểu đồ ngang đơn giản, không cần thư viện ngoài */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:13px;}
+.bar-row .bar-label{width:110px;flex-shrink:0;color:var(--muted);}
+.bar-track{flex:1;background:var(--bg);border-radius:6px;height:16px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:6px;}
+.bar-row .bar-value{width:34px;text-align:right;font-weight:600;flex-shrink:0;}
+
 /* Khung đọc tài liệu kiểu trang A4 */
 .reader-page{
   background:var(--paper);color:#222;max-width:700px;margin:0 auto;

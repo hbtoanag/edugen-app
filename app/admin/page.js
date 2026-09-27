@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { supabase } from '../../lib/supabaseClient';
 import AppShell from '../../components/AppShell';
+import Sidebar from '../../components/Sidebar';
 
 function downloadTemplate() {
   const wsData = [
@@ -148,58 +149,49 @@ export default function AdminPage() {
 
   return (
     <AppShell profile={profile}>
-      <div className="container">
-        <h2>Bảng điều khiển Admin</h2>
-
-        <div className="tabs">
-          <span className={`tab-btn ${tab === 'home' ? 'active' : ''}`} onClick={() => setTab('home')}>Trang chủ</span>
-          <span className={`tab-btn ${tab === 'single' ? 'active' : ''}`} onClick={() => setTab('single')}>Tạo 1 tài khoản</span>
-          <span className={`tab-btn ${tab === 'excel' ? 'active' : ''}`} onClick={() => setTab('excel')}>Nhập từ Excel</span>
-          <span className={`tab-btn ${tab === 'class' ? 'active' : ''}`} onClick={() => setTab('class')}>Lớp học</span>
-        </div>
+      <div className="shell">
+        <Sidebar
+          items={[
+            { id: 'home', icon: '📊', label: 'Trang chủ' },
+            { id: 'single', icon: '👤', label: 'Tạo 1 tài khoản' },
+            { id: 'excel', icon: '📥', label: 'Nhập từ Excel' },
+            { id: 'class', icon: '🏫', label: 'Lớp học', badge: classes.length },
+          ]}
+          active={tab}
+          onSelect={setTab}
+        />
+        <div className="content-area">
 
         {tab === 'home' && (
           <>
-            <div className="card">
-              <h3>Chào {profile?.full_name || 'bạn'} 👋</h3>
-              <p className="muted">Đây là bảng điều khiển Quản trị EduGen. Bạn tạo tài khoản Giáo viên/Học sinh và quản lý lớp học từ đây; nội dung dạy học (tài liệu, câu hỏi, đề thi) do từng Giáo viên tự quản lý riêng.</p>
-              <div className="grid-2" style={{ marginTop: 16 }}>
-                <div className="row-list" style={{ display: 'block', textAlign: 'center' }}>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--navy)' }}>{stats.teachers}</div>
-                  <div className="muted">Giáo viên</div>
-                </div>
-                <div className="row-list" style={{ display: 'block', textAlign: 'center' }}>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--navy)' }}>{stats.students}</div>
-                  <div className="muted">Học sinh</div>
-                </div>
-              </div>
-              <div className="row-list" style={{ display: 'block', textAlign: 'center', marginTop: 10 }}>
-                <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--navy)' }}>{stats.classes}</div>
-                <div className="muted">Lớp học</div>
-              </div>
+            <h2>Chào {profile?.full_name || 'bạn'} 👋</h2>
+            <p className="muted">Bảng điều khiển Quản trị EduGen. Bạn tạo tài khoản Giáo viên/Học sinh và quản lý lớp học từ đây; nội dung dạy học do từng Giáo viên tự quản lý riêng.</p>
+            <div className="grid-2" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginTop: 16 }}>
+              <div className="stat-card"><div className="num">{stats.teachers}</div><div className="lbl">Giáo viên</div></div>
+              <div className="stat-card"><div className="num">{stats.students}</div><div className="lbl">Học sinh</div></div>
+              <div className="stat-card"><div className="num">{stats.classes}</div><div className="lbl">Lớp học</div></div>
+            </div>
+
+            <div className="card" style={{ marginTop: 16 }}>
+              <h3>Tỉ lệ Giáo viên / Học sinh</h3>
+              {(() => { const max = Math.max(1, stats.teachers, stats.students); return (<>
+                <div className="bar-row"><span className="bar-label">Giáo viên</span><div className="bar-track"><div className="bar-fill" style={{ width: `${stats.teachers / max * 100}%`, background: 'var(--navy)' }} /></div><span className="bar-value">{stats.teachers}</span></div>
+                <div className="bar-row"><span className="bar-label">Học sinh</span><div className="bar-track"><div className="bar-fill" style={{ width: `${stats.students / max * 100}%`, background: 'var(--gold)' }} /></div><span className="bar-value">{stats.students}</span></div>
+              </>); })()}
             </div>
 
             <div className="card">
               <h3>Chức năng quản trị</h3>
               <div className="row-list">
-                <div>
-                  <div style={{ fontWeight: 600 }}>Tạo 1 tài khoản</div>
-                  <div className="muted">Tạo tay từng tài khoản Giáo viên hoặc Học sinh, hệ thống tự sinh mật khẩu tạm.</div>
-                </div>
+                <div><div style={{ fontWeight: 600 }}>Tạo 1 tài khoản</div><div className="muted">Tạo tay từng tài khoản Giáo viên hoặc Học sinh, hệ thống tự sinh mật khẩu tạm.</div></div>
                 <button onClick={() => setTab('single')}>Mở</button>
               </div>
               <div className="row-list">
-                <div>
-                  <div style={{ fontWeight: 600 }}>Nhập hàng loạt từ Excel</div>
-                  <div className="muted">Tải file mẫu, điền danh sách GV/HS, nhập 1 lần nhiều tài khoản — mật khẩu mặc định 12345@Edu.</div>
-                </div>
+                <div><div style={{ fontWeight: 600 }}>Nhập hàng loạt từ Excel</div><div className="muted">Tải file mẫu, điền danh sách GV/HS, nhập 1 lần nhiều tài khoản — mật khẩu mặc định 12345@Edu.</div></div>
                 <button onClick={() => setTab('excel')}>Mở</button>
               </div>
               <div className="row-list">
-                <div>
-                  <div style={{ fontWeight: 600 }}>Lớp học</div>
-                  <div className="muted">Tạo, xem danh sách lớp trong trường.</div>
-                </div>
+                <div><div style={{ fontWeight: 600 }}>Lớp học</div><div className="muted">Tạo, xem danh sách lớp trong trường.</div></div>
                 <button onClick={() => setTab('class')}>Mở</button>
               </div>
             </div>
@@ -295,6 +287,8 @@ export default function AdminPage() {
             <p className="muted">Phần gán học sinh vào lớp và phân công giáo viên dạy lớp sẽ hoàn thiện ở giai đoạn tiếp theo.</p>
           </div>
         )}
+
+        </div>
       </div>
     </AppShell>
   );
