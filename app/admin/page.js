@@ -159,24 +159,51 @@ export default function AdminPage() {
         </div>
 
         {tab === 'home' && (
-          <div className="card">
-            <h3>Chào {profile?.full_name || 'bạn'} 👋</h3>
-            <p className="muted">Đây là bảng điều khiển Quản trị EduGen. Bạn tạo tài khoản Giáo viên/Học sinh và quản lý lớp học từ đây; nội dung dạy học (tài liệu, câu hỏi, đề thi) do từng Giáo viên tự quản lý riêng.</p>
-            <div className="grid-2" style={{ marginTop: 16 }}>
-              <div className="row-list" style={{ display: 'block', textAlign: 'center' }}>
-                <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--navy)' }}>{stats.teachers}</div>
-                <div className="muted">Giáo viên</div>
+          <>
+            <div className="card">
+              <h3>Chào {profile?.full_name || 'bạn'} 👋</h3>
+              <p className="muted">Đây là bảng điều khiển Quản trị EduGen. Bạn tạo tài khoản Giáo viên/Học sinh và quản lý lớp học từ đây; nội dung dạy học (tài liệu, câu hỏi, đề thi) do từng Giáo viên tự quản lý riêng.</p>
+              <div className="grid-2" style={{ marginTop: 16 }}>
+                <div className="row-list" style={{ display: 'block', textAlign: 'center' }}>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--navy)' }}>{stats.teachers}</div>
+                  <div className="muted">Giáo viên</div>
+                </div>
+                <div className="row-list" style={{ display: 'block', textAlign: 'center' }}>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--navy)' }}>{stats.students}</div>
+                  <div className="muted">Học sinh</div>
+                </div>
               </div>
-              <div className="row-list" style={{ display: 'block', textAlign: 'center' }}>
-                <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--navy)' }}>{stats.students}</div>
-                <div className="muted">Học sinh</div>
+              <div className="row-list" style={{ display: 'block', textAlign: 'center', marginTop: 10 }}>
+                <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--navy)' }}>{stats.classes}</div>
+                <div className="muted">Lớp học</div>
               </div>
             </div>
-            <div className="row-list" style={{ display: 'block', textAlign: 'center', marginTop: 10 }}>
-              <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--navy)' }}>{stats.classes}</div>
-              <div className="muted">Lớp học</div>
+
+            <div className="card">
+              <h3>Chức năng quản trị</h3>
+              <div className="row-list">
+                <div>
+                  <div style={{ fontWeight: 600 }}>Tạo 1 tài khoản</div>
+                  <div className="muted">Tạo tay từng tài khoản Giáo viên hoặc Học sinh, hệ thống tự sinh mật khẩu tạm.</div>
+                </div>
+                <button onClick={() => setTab('single')}>Mở</button>
+              </div>
+              <div className="row-list">
+                <div>
+                  <div style={{ fontWeight: 600 }}>Nhập hàng loạt từ Excel</div>
+                  <div className="muted">Tải file mẫu, điền danh sách GV/HS, nhập 1 lần nhiều tài khoản — mật khẩu mặc định 12345@Edu.</div>
+                </div>
+                <button onClick={() => setTab('excel')}>Mở</button>
+              </div>
+              <div className="row-list">
+                <div>
+                  <div style={{ fontWeight: 600 }}>Lớp học</div>
+                  <div className="muted">Tạo, xem danh sách lớp trong trường.</div>
+                </div>
+                <button onClick={() => setTab('class')}>Mở</button>
+              </div>
             </div>
-          </div>
+          </>
         )}
 
         {tab === 'single' && (

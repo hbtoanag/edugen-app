@@ -96,11 +96,25 @@ export default function TeacherPage() {
     <AppShell profile={profile}>
       <div className="container">
         <h2>Chào {profile?.full_name || 'bạn'} 👋</h2>
-        <p className="muted" style={{ marginTop: -4 }}>Tài liệu & AI trích xuất — môn {profile?.subject}</p>
-        <div className="tabs">
-          <Link href="/teacher/dethi"><span className="tab-btn">Tạo đề thi theo ma trận (AI)</span></Link>
-        </div>
+        <p className="muted" style={{ marginTop: -4 }}>Môn {profile?.subject}</p>
 
+        <div className="card">
+          <h3>Chức năng của bạn</h3>
+          <div className="row-list">
+            <div>
+              <div style={{ fontWeight: 600 }}>Tài liệu & AI trích xuất</div>
+              <div className="muted">Tải PDF lên, AI tự trích câu hỏi vào ngân hàng — xem ngay bên dưới trang này.</div>
+            </div>
+            <span className="tag teal">Đang xem</span>
+          </div>
+          <div className="row-list">
+            <div>
+              <div style={{ fontWeight: 600 }}>Tạo đề thi theo ma trận (AI)</div>
+              <div className="muted">Nhập số câu theo chủ đề × mức độ, hệ thống tự chọn câu từ ngân hàng của bạn.</div>
+            </div>
+            <Link href="/teacher/dethi"><button>Mở</button></Link>
+          </div>
+        </div>
         <div className="card">
           <h3>Tải tài liệu PDF mới</h3>
           <form onSubmit={handleUpload}>
