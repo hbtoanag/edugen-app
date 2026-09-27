@@ -141,12 +141,13 @@ export default function DeThiPage() {
 
         {result && (
           <div className="card" style={{ marginTop: 16 }}>
-            <div className="success">Đã tạo đề với {result.totalQuestions} câu (trạng thái: Nháp — vào "Giao bài & chấm" để giao cho lớp).</div>
+            <div className="success">Đã tạo đề với {result.totalQuestions} câu (trạng thái: Nháp).</div>
             {result.shortages.length > 0 && (
               <div className="error">
                 Thiếu câu ở {result.shortages.length} ô ma trận (ngân hàng chưa đủ câu đúng mức độ đó) — đề vẫn tạo nhưng ít câu hơn yêu cầu ở các ô này.
               </div>
             )}
+            <Link href={`/teacher/worksheet/${result.worksheetId}`}><button style={{ marginTop: 8 }}>Xem đề dạng trang</button></Link>
           </div>
         )}
       </div>

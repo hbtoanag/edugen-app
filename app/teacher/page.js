@@ -109,6 +109,13 @@ export default function TeacherPage() {
           </div>
           <div className="row-list">
             <div>
+              <div style={{ fontWeight: 600 }}>Tạo phiếu bài tập (chọn tay)</div>
+              <div className="muted">Tự lọc và tick chọn từng câu từ ngân hàng của bạn để ghép thành phiếu.</div>
+            </div>
+            <Link href="/teacher/phieu"><button>Mở</button></Link>
+          </div>
+          <div className="row-list">
+            <div>
               <div style={{ fontWeight: 600 }}>Tạo đề thi theo ma trận (AI)</div>
               <div className="muted">Nhập số câu theo chủ đề × mức độ, hệ thống tự chọn câu từ ngân hàng của bạn.</div>
             </div>
