@@ -25,7 +25,8 @@ function normalizeRole(raw) {
 
 export default function AdminPage() {
   const [profile, setProfile] = useState(null);
-  const [tab, setTab] = useState('single');
+  const [tab, setTab] = useState('home');
+  const [stats, setStats] = useState({ teachers: 0, students: 0, classes: 0 });
 
   // Tạo tay 1 tài khoản
   const [role, setRole] = useState('teacher');
@@ -59,6 +60,14 @@ export default function AdminPage() {
     setSubjects(subs || []);
     if (subs && subs[0]) setSubject(subs[0].name);
     loadClasses();
+    loadStats();
+  }
+
+  async function loadStats() {
+    const { count: teacherCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'teacher');
+    const { count: studentCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student');
+    const { count: classCount } = await supabase.from('classes').select('*', { count: 'exact', head: true });
+    setStats({ teachers: teacherCount || 0, students: studentCount || 0, classes: classCount || 0 });
   }
 
   async function loadClasses() {
@@ -143,10 +152,32 @@ export default function AdminPage() {
         <h2>Bảng điều khiển Admin</h2>
 
         <div className="tabs">
+          <span className={`tab-btn ${tab === 'home' ? 'active' : ''}`} onClick={() => setTab('home')}>Trang chủ</span>
           <span className={`tab-btn ${tab === 'single' ? 'active' : ''}`} onClick={() => setTab('single')}>Tạo 1 tài khoản</span>
           <span className={`tab-btn ${tab === 'excel' ? 'active' : ''}`} onClick={() => setTab('excel')}>Nhập từ Excel</span>
           <span className={`tab-btn ${tab === 'class' ? 'active' : ''}`} onClick={() => setTab('class')}>Lớp học</span>
         </div>
+
+        {tab === 'home' && (
+          <div className="card">
+            <h3>Chào {profile?.full_name || 'bạn'} 👋</h3>
+            <p className="muted">Đây là bảng điều khiển Quản trị EduGen. Bạn tạo tài khoản Giáo viên/Học sinh và quản lý lớp học từ đây; nội dung dạy học (tài liệu, câu hỏi, đề thi) do từng Giáo viên tự quản lý riêng.</p>
+            <div className="grid-2" style={{ marginTop: 16 }}>
+              <div className="row-list" style={{ display: 'block', textAlign: 'center' }}>
+                <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--navy)' }}>{stats.teachers}</div>
+                <div className="muted">Giáo viên</div>
+              </div>
+              <div className="row-list" style={{ display: 'block', textAlign: 'center' }}>
+                <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--navy)' }}>{stats.students}</div>
+                <div className="muted">Học sinh</div>
+              </div>
+            </div>
+            <div className="row-list" style={{ display: 'block', textAlign: 'center', marginTop: 10 }}>
+              <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--navy)' }}>{stats.classes}</div>
+              <div className="muted">Lớp học</div>
+            </div>
+          </div>
+        )}
 
         {tab === 'single' && (
           <div className="card">

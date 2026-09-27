@@ -95,7 +95,8 @@ export default function TeacherPage() {
   return (
     <AppShell profile={profile}>
       <div className="container">
-        <h2>Tài liệu & AI trích xuất — {profile?.subject}</h2>
+        <h2>Chào {profile?.full_name || 'bạn'} 👋</h2>
+        <p className="muted" style={{ marginTop: -4 }}>Tài liệu & AI trích xuất — môn {profile?.subject}</p>
         <div className="tabs">
           <Link href="/teacher/dethi"><span className="tab-btn">Tạo đề thi theo ma trận (AI)</span></Link>
         </div>
