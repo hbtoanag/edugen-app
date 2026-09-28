@@ -1,5 +1,11 @@
 # Hướng dẫn triển khai EduGen
 
+## CẬP NHẬT LẦN NÀY (thứ tự bắt buộc)
+1. Supabase → SQL Editor → chạy `supabase/patch-3-giaobai.sql` (nếu chưa chạy `patch-2-subjects-documents.sql` thì chạy patch-2 trước).
+2. Upload đè toàn bộ code lên GitHub (kéo-thả cả thư mục app, components, lib, supabase và các file gốc).
+3. Đợi Vercel build xong (không cần đổi Environment Variables).
+4. Thứ tự dùng thử: Admin tạo GV + HS (hoặc nhập Excel có cột Lớp) → Admin vào "Lớp học" gán GV/HS → GV tải PDF, tạo phiếu/đề, bấm "Giao bài" → HS đăng nhập làm bài → GV xem kết quả & hồ sơ.
+
 ## Nếu bạn ĐÃ deploy được ở bản trước (chỉ cập nhật code mới)
 1. Vào Supabase → SQL Editor → dán nội dung file `supabase/patch-2-subjects-documents.sql` → Run (thêm bảng Môn học + trường quản lý tài liệu, không mất dữ liệu cũ).
 2. Lên GitHub, upload đè các file/thư mục mới vào đúng vị trí cũ trong repo (kéo-thả như trước, chọn "Replace" nếu được hỏi).

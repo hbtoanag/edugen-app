@@ -30,9 +30,20 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Không có dòng dữ liệu nào để nhập.' }, { status: 400 });
   }
 
+  const classCache = {};
+  async function getOrCreateClass(name) {
+    const key = name.trim();
+    if (!key) return null;
+    if (classCache[key]) return classCache[key];
+    let { data: c } = await supabaseAdmin.from('classes').select('id').eq('name', key).maybeSingle();
+    if (!c) { const r = await supabaseAdmin.from('classes').insert({ name: key }).select('id').single(); c = r.data; }
+    classCache[key] = c?.id || null;
+    return classCache[key];
+  }
+
   const results = [];
   for (const row of rows) {
-    const { full_name, email, role, subject } = row;
+    const { full_name, email, role, subject, class_names } = row;
     if (!full_name || !email || !role) {
       results.push({ email: email || '(thiếu email)', success: false, message: 'Thiếu họ tên, email hoặc vai trò.' });
       continue;
@@ -55,6 +66,14 @@ export async function POST(req) {
     if (profileError) {
       results.push({ email, success: false, message: profileError.message });
       continue;
+    }
+    // Xếp lớp: HS -> 1 lớp; GV -> nhiều lớp dạy (cách nhau dấu phẩy)
+    const names = String(class_names || '').split(',').map(x => x.trim()).filter(Boolean);
+    for (const n of (role === 'student' ? names.slice(0, 1) : names)) {
+      const cid = await getOrCreateClass(n);
+      if (!cid) continue;
+      if (role === 'student') await supabaseAdmin.from('class_students').insert({ class_id: cid, student_id: created.user.id });
+      else await supabaseAdmin.from('class_teachers').insert({ class_id: cid, teacher_id: created.user.id, subject: subject || '' });
     }
     results.push({ email, success: true, message: 'Đã tạo, mật khẩu: ' + DEFAULT_PASSWORD });
   }

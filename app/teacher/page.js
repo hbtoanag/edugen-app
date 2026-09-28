@@ -23,6 +23,11 @@ export default function TeacherPage() {
   const [questions, setQuestions] = useState([]);
   const [worksheets, setWorksheets] = useState([]);
   const [classTeaching, setClassTeaching] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [assignFor, setAssignFor] = useState(null); // worksheet id đang mở form giao bài
+  const [assignForm, setAssignForm] = useState({ classId: '', dueAt: '', duration: 45 });
+  const [assignMsg, setAssignMsg] = useState(null);
 
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState(null);
@@ -52,6 +57,45 @@ export default function TeacherPage() {
     setWorksheets(ws || []);
     const { data: ct } = await supabase.from('class_teachers').select('*, classes(name)').eq('teacher_id', session.user.id);
     setClassTeaching(ct || []);
+
+    const classIds = (ct || []).map(c => c.class_id);
+    const { data: asg } = await supabase.from('assignments').select('*, worksheets(title, kind), classes(name)').order('created_at', { ascending: false });
+    const { data: subs } = await supabase.from('submissions').select('assignment_id, student_id, score, submitted_at');
+    const countMap = {}; const scoreMap = {};
+    (subs || []).forEach(x => {
+      if (!x.submitted_at) return;
+      countMap[x.assignment_id] = (countMap[x.assignment_id] || 0) + 1;
+      (scoreMap[x.student_id] = scoreMap[x.student_id] || []).push(Number(x.score || 0));
+    });
+    setAssignments((asg || []).map(a => ({ ...a, submitted: countMap[a.id] || 0 })));
+
+    if (classIds.length) {
+      const { data: cs } = await supabase.from('class_students').select('class_id, student_id, profiles(full_name), classes(name)').in('class_id', classIds);
+      setStudents((cs || []).map(r => {
+        const sc = scoreMap[r.student_id] || [];
+        return { id: r.student_id, name: r.profiles?.full_name || '(chưa rõ tên)', className: r.classes?.name, count: sc.length, avg: sc.length ? (sc.reduce((a, b) => a + b, 0) / sc.length).toFixed(1) : null };
+      }));
+    } else setStudents([]);
+  }
+
+  async function handleAssign(worksheetId) {
+    setAssignMsg(null);
+    if (!assignForm.classId) { setAssignMsg({ type: 'error', text: 'Chọn lớp cần giao.' }); return; }
+    const { error } = await supabase.from('assignments').insert({
+      worksheet_id: worksheetId, class_id: assignForm.classId,
+      due_at: assignForm.dueAt ? new Date(assignForm.dueAt).toISOString() : null,
+      duration_minutes: Number(assignForm.duration) || 45,
+    });
+    if (error) { setAssignMsg({ type: 'error', text: error.message }); return; }
+    await supabase.from('worksheets').update({ status: 'published' }).eq('id', worksheetId);
+    setAssignMsg({ type: 'success', text: 'Đã giao bài cho lớp.' });
+    setAssignFor(null);
+    load();
+  }
+
+  async function handleApprove(id) {
+    await supabase.from('worksheets').update({ status: 'draft' }).eq('id', id);
+    load();
   }
 
   async function handleUpload(e) {
@@ -130,6 +174,8 @@ export default function TeacherPage() {
     { id: 'tailieu', icon: '📄', label: 'Tài liệu & AI', badge: documents.length },
     { id: 'nganhang', icon: '🗂️', label: 'Ngân hàng câu hỏi', badge: questions.length },
     { id: 'dethi', icon: '📝', label: 'Đề thi / Phiếu', badge: worksheets.length },
+    { id: 'giaobai', icon: '📤', label: 'Giao bài & chấm', badge: assignments.length },
+    { id: 'hocsinh', icon: '🎓', label: 'Học sinh', badge: students.length },
     { id: 'lophoc', icon: '🏫', label: 'Lớp học', badge: classTeaching.length },
   ];
 
@@ -250,16 +296,77 @@ export default function TeacherPage() {
                 <Link href="/teacher/dethi"><span className="tab-btn">+ Tạo đề thi (AI ma trận)</span></Link>
               </div>
               <div className="card">
+                {assignMsg && <div className={assignMsg.type === 'error' ? 'error' : 'success'}>{assignMsg.text}</div>}
                 {worksheets.map(w => (
-                  <div key={w.id} className="row-list">
-                    <div><div style={{ fontWeight: 600 }}>{w.title}</div><div className="muted">{w.kind === 'dethi' ? 'Đề thi (AI sinh)' : 'Phiếu bài tập'} · {w.status === 'draft' ? 'Nháp' : w.status}</div></div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <Link href={`/teacher/worksheet/${w.id}`}><button className="ghost">Xem</button></Link>
-                      <button className="ghost" onClick={() => handleDeleteWorksheet(w.id)}>Xóa</button>
+                  <div key={w.id} className="row-list" style={{ display: 'block' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                      <div><div style={{ fontWeight: 600 }}>{w.title}</div>
+                        <div className="muted">{w.kind === 'dethi' ? 'Đề thi (AI sinh)' : 'Phiếu bài tập'} · {w.status === 'draft' ? 'Nháp' : w.status === 'pending_review' ? 'Chờ giáo viên duyệt' : 'Đã giao'}</div></div>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <Link href={`/teacher/worksheet/${w.id}`}><button className="ghost">Xem</button></Link>
+                        {w.status === 'pending_review' && <button className="gold" onClick={() => handleApprove(w.id)}>Duyệt</button>}
+                        {w.status !== 'pending_review' && <button onClick={() => { setAssignFor(assignFor === w.id ? null : w.id); setAssignMsg(null); }}>Giao bài</button>}
+                        <button className="ghost" onClick={() => handleDeleteWorksheet(w.id)}>Xóa</button>
+                      </div>
                     </div>
+                    {assignFor === w.id && (
+                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--line)' }}>
+                        {classTeaching.length === 0 && <div className="error">Bạn chưa được phân công lớp nào — nhờ Quản trị gán lớp trước.</div>}
+                        <div className="grid-2">
+                          <div><label>Giao cho lớp</label>
+                            <select value={assignForm.classId} onChange={e => setAssignForm({ ...assignForm, classId: e.target.value })}>
+                              <option value="">— Chọn lớp —</option>
+                              {classTeaching.map(c => <option key={c.class_id} value={c.class_id}>{c.classes?.name}</option>)}
+                            </select></div>
+                          <div><label>Thời gian làm bài (phút)</label><input type="number" min="5" value={assignForm.duration} onChange={e => setAssignForm({ ...assignForm, duration: e.target.value })} /></div>
+                        </div>
+                        <label>Hạn nộp</label>
+                        <input type="datetime-local" value={assignForm.dueAt} onChange={e => setAssignForm({ ...assignForm, dueAt: e.target.value })} />
+                        <button onClick={() => handleAssign(w.id)}>Xác nhận giao bài</button>
+                      </div>
+                    )}
                   </div>
                 ))}
                 {worksheets.length === 0 && <div className="muted">Chưa có phiếu/đề nào.</div>}
+              </div>
+            </>
+          )}
+
+          {section === 'giaobai' && (
+            <>
+              <h2>Giao bài & chấm</h2>
+              <p className="muted">Các phiếu/đề đã giao. Bấm "Xem kết quả" để xem điểm từng học sinh và sơ đồ nhiệt từng câu.</p>
+              <div className="card">
+                {assignments.map(a => (
+                  <div key={a.id} className="row-list">
+                    <div><div style={{ fontWeight: 600 }}>{a.worksheets?.title}</div>
+                      <div className="muted">Lớp {a.classes?.name} · Hạn: {a.due_at ? new Date(a.due_at).toLocaleString('vi-VN') : 'Không hạn'} · {a.duration_minutes} phút</div></div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <span className="tag teal">{a.submitted} đã nộp</span>
+                      <Link href={`/teacher/assignment/${a.id}`}><button>Xem kết quả</button></Link>
+                    </div>
+                  </div>
+                ))}
+                {assignments.length === 0 && <div className="muted">Chưa giao bài nào. Vào "Đề thi / Phiếu" → bấm "Giao bài".</div>}
+              </div>
+            </>
+          )}
+
+          {section === 'hocsinh' && (
+            <>
+              <h2>Học sinh các lớp bạn dạy</h2>
+              <p className="muted">Bấm "Hồ sơ" để xem sơ đồ nhiệt kiến thức, nhận định AI và tạo phiếu ôn tập riêng.</p>
+              <div className="card">
+                {students.map(st => (
+                  <div key={st.id} className="row-list">
+                    <div><div style={{ fontWeight: 600 }}>{st.name}</div><div className="muted">Lớp {st.className} · {st.count} bài đã nộp</div></div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      {st.avg !== null && <span className={`tag ${Number(st.avg) >= 8 ? 'teal' : Number(st.avg) >= 5 ? 'gold' : 'rust'}`}>TB {st.avg}</span>}
+                      <Link href={`/teacher/student/${st.id}`}><button className="ghost">Hồ sơ</button></Link>
+                    </div>
+                  </div>
+                ))}
+                {students.length === 0 && <div className="muted">Chưa có học sinh — cần Quản trị phân công bạn dạy lớp và xếp học sinh vào lớp.</div>}
               </div>
             </>
           )}

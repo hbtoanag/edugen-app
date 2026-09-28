@@ -11,6 +11,18 @@ export default function DocReaderPage() {
   const [profile, setProfile] = useState(null);
   const [doc, setDoc] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [summarizing, setSummarizing] = useState(false);
+  const [sumError, setSumError] = useState('');
+
+  async function summarize() {
+    setSummarizing(true); setSumError('');
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch('/api/ai/summarize', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ documentId: params.id }) });
+    const json = await res.json();
+    setSummarizing(false);
+    if (!res.ok) { setSumError(json.error); return; }
+    setDoc(d => ({ ...d, ai_summary: json.summary }));
+  }
 
   useEffect(() => {
     async function load() {
@@ -33,6 +45,28 @@ export default function DocReaderPage() {
         </div>
 
         {loading && <div className="muted">Đang tải…</div>}
+
+        {!loading && doc && (
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0 }}>Tóm tắt kiến thức bằng AI</h3>
+              <button className="gold" onClick={summarize} disabled={summarizing}>{summarizing ? 'AI đang tóm tắt…' : doc.ai_summary ? 'Tóm tắt lại' : 'Tóm tắt bằng AI'}</button>
+            </div>
+            {sumError && <div className="error" style={{ marginTop: 8 }}>{sumError}</div>}
+            {doc.ai_summary && (
+              <div style={{ marginTop: 12, lineHeight: 1.65 }}>
+                <b>Chủ đề chính</b>
+                <ul>{(doc.ai_summary.main_topics || []).map((t, i) => <li key={i}><QuestionKatex text={t} /></li>)}</ul>
+                <b>Công thức trọng tâm</b>
+                <ul>{(doc.ai_summary.key_formulas || []).map((t, i) => <li key={i}><QuestionKatex text={t} /></li>)}</ul>
+                <b>Kiến thức cần nhớ</b>
+                <ul>{(doc.ai_summary.must_remember || []).map((t, i) => <li key={i}><QuestionKatex text={t} /></li>)}</ul>
+                <b>Gợi ý phân hóa</b>
+                <ul>{Object.entries(doc.ai_summary.differentiation || {}).map(([k, v]) => <li key={k}>Nhóm {k}: <QuestionKatex text={String(v)} /></li>)}</ul>
+              </div>
+            )}
+          </div>
+        )}
 
         {!loading && doc && !doc.clean_reading_content && (
           <div className="card muted">
